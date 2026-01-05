@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,8 +22,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -34,211 +37,194 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
 import com.example.animatedapp.ui.theme.*
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-enum class AnimationState {
+enum class AppAnimationState {
     WALKING, WAVING, DRAGGING
 }
 
 @Composable
 fun LoginScreen() {
     val haptic = LocalHapticFeedback.current
-    var animationState by remember { mutableStateOf(AnimationState.WALKING) }
+    val scope = rememberCoroutineScope()
+    var animationState by remember { mutableStateOf(AppAnimationState.WALKING) }
     
+    // Physics-based tilt for the "Tinder" feel
+    var tiltX by remember { mutableStateOf(0f) }
+    var tiltY by remember { mutableStateOf(0f) }
+    val animatedTiltX by animateFloatAsState(tiltX, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow))
+    val animatedTiltY by animateFloatAsState(tiltY, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow))
+
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(
         com.example.animatedapp.R.raw.character_animation
     ))
     
     val progress by animateLottieCompositionAsState(
         composition = composition,
-        iterations = if (animationState == AnimationState.WALKING) LottieConstants.IterateForever else 1
+        iterations = if (animationState == AppAnimationState.WALKING) LottieConstants.IterateForever else 1
     )
 
-    // Physics-based character movement
+    // Character horizontal movement with "Angry Birds" squash/stretch logic
     val characterXOffset by animateDpAsState(
         targetValue = when (animationState) {
-            AnimationState.WALKING -> (-200).dp
-            AnimationState.WAVING -> 20.dp
-            AnimationState.DRAGGING -> 300.dp
+            AppAnimationState.WALKING -> (-200).dp
+            AppAnimationState.WAVING -> 20.dp
+            AppAnimationState.DRAGGING -> 320.dp
         },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessVeryLow
-        ),
+        animationSpec = spring(Spring.DampingRatioLowBouncy, Spring.StiffnessVeryLow),
         label = "CharacterX"
     )
 
-    // Physics-based Login Card movement (The "Drag")
-    val loginCardOffset = remember { Animatable(1200f) }
+    // Physics-based Login Card movement
+    val loginCardOffset = remember { Animatable(1500f) }
+    val cardScale = remember { Animatable(0.9f) }
     
     LaunchedEffect(animationState) {
-        if (animationState == AnimationState.DRAGGING) {
-            loginCardOffset.animateTo(
-                targetValue = 0f,
-                animationSpec = spring(
-                    dampingRatio = 0.6f, // Slight wobble for "weight"
-                    stiffness = Spring.StiffnessLow
-                )
-            )
+        if (animationState == AppAnimationState.DRAGGING) {
+            launch {
+                loginCardOffset.animateTo(0f, spring(0.5f, Spring.StiffnessLow))
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress) // "Lock" feel
+            }
+            launch {
+                cardScale.animateTo(1f, spring(Spring.DampingRatioHighBouncy, Spring.StiffnessMedium))
+            }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Obsidian)) {
-        
-        // Bespoke Parallax Background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Obsidian)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        tiltX = (dragAmount.x / 50f).coerceIn(-10f, 10f)
+                        tiltY = (dragAmount.y / 50f).coerceIn(-10f, 10f)
+                    },
+                    onDragEnd = { tiltX = 0f; tiltY = 0f }
+                )
+            }
+    ) {
+        // Immersive Parallax Background
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-            
-            // Subtle organic shapes
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(GoldPremium.copy(alpha = 0.03f), Color.Transparent),
-                    center = Offset(canvasWidth * 0.8f, canvasHeight * 0.2f),
-                    radius = 600f
+                    colors = listOf(GoldPremium.copy(alpha = 0.05f), Color.Transparent),
+                    center = Offset(size.width * 0.5f, size.height * 0.5f),
+                    radius = size.minDimension
                 ),
-                radius = 600f,
-                center = Offset(canvasWidth * 0.8f, canvasHeight * 0.2f)
+                radius = size.minDimension,
+                center = Offset(size.width * 0.5f, size.height * 0.5f)
             )
         }
 
-        // The Signature Login Card
+        // The Masterpiece Login Card
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset { IntOffset(0, loginCardOffset.value.roundToInt()) }
+                .graphicsLayer {
+                    rotationX = -animatedTiltY
+                    rotationY = animatedTiltX
+                    scaleX = cardScale.value
+                    scaleY = cardScale.value
+                    cameraDistance = 12f * density
+                }
                 .padding(24.dp)
-                .shadow(40.dp, RoundedCornerShape(48.dp), ambientColor = GoldPremium.copy(alpha = 0.5f))
-                .clip(RoundedCornerShape(48.dp))
+                .shadow(50.dp, RoundedCornerShape(56.dp), ambientColor = GoldPremium, spotColor = GoldPremium)
+                .clip(RoundedCornerShape(56.dp))
                 .background(GlassDark)
-                .border(0.5.dp, GoldPremium.copy(alpha = 0.4f), RoundedCornerShape(48.dp))
-                .padding(horizontal = 32.dp, vertical = 48.dp),
+                .border(0.5.dp, GoldPremium.copy(alpha = 0.5f), RoundedCornerShape(56.dp))
+                .padding(horizontal = 40.dp, vertical = 64.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Welcome",
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.ExtraLight,
-                    fontFamily = FontFamily.Serif,
-                    color = GoldPremium,
-                    letterSpacing = 4.sp
+                text = "EXCEPTIONAL",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Black,
+                    color = GoldPremium.copy(alpha = 0.4f),
+                    letterSpacing = 8.sp
                 )
             )
             Text(
-                text = "TO THE EXCEPTIONAL",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = GoldPremium.copy(alpha = 0.6f),
-                    letterSpacing = 6.sp
+                text = "Seeking",
+                style = MaterialTheme.typography.displayMedium.copy(
+                    fontWeight = FontWeight.Thin,
+                    fontFamily = FontFamily.Serif,
+                    color = GoldPremium,
+                    letterSpacing = 2.sp
                 )
-            )
-            
-            Spacer(modifier = Modifier.height(56.dp))
-            
-            SignatureTextField(
-                label = "EMAIL",
-                icon = Icons.Default.Email
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            SignatureTextField(
-                label = "PASSWORD",
-                icon = Icons.Default.Lock,
-                isPassword = true
             )
             
             Spacer(modifier = Modifier.height(64.dp))
             
-            // Bespoke Button with Shimmer
+            MasterpieceTextField(label = "IDENTITY", icon = Icons.Default.Person)
+            Spacer(modifier = Modifier.height(24.dp))
+            MasterpieceTextField(label = "ACCESS KEY", icon = Icons.Default.VpnKey, isPassword = true)
+            
+            Spacer(modifier = Modifier.height(72.dp))
+            
+            // Juicy Button
             Button(
-                onClick = {},
+                onClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
-                    .border(1.dp, GoldPremium, RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = GoldPremium
-                )
+                    .height(80.dp)
+                    .graphicsLayer { shadowElevation = 20f },
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = GoldPremium, contentColor = Obsidian)
             ) {
-                Text(
-                    "ENTER",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Light,
-                    letterSpacing = 8.sp
-                )
+                Text("ASCEND", fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 10.sp)
             }
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
-            Text(
-                text = "FORGOT CREDENTIALS?",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = TextSilver.copy(alpha = 0.5f),
-                    letterSpacing = 2.sp
-                )
-            )
         }
 
-        // The Character (Lottie) - Positioned to "pull" the card
+        // The Character (Lottie) - Reactive positioning
         LottieAnimation(
             composition = composition,
             progress = { progress },
             modifier = Modifier
-                .size(350.dp)
+                .size(380.dp)
                 .align(Alignment.BottomStart)
-                .offset(x = characterXOffset, y = 40.dp)
+                .offset(x = characterXOffset, y = 60.dp)
+                .graphicsLayer {
+                    // Subtle "breathing" scale
+                    val s = 1f + (progress * 0.02f)
+                    scaleX = s
+                    scaleY = s
+                }
         )
     }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1000)
-        animationState = AnimationState.WAVING
+        kotlinx.coroutines.delay(1200)
+        animationState = AppAnimationState.WAVING
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         
-        kotlinx.coroutines.delay(2500)
-        animationState = AnimationState.DRAGGING
-        // Heavy haptic for the "drag" start
+        kotlinx.coroutines.delay(2800)
+        animationState = AppAnimationState.DRAGGING
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignatureTextField(
-    label: String,
-    icon: ImageVector,
-    isPassword: Boolean = false
-) {
+fun MasterpieceTextField(label: String, icon: ImageVector, isPassword: Boolean = false) {
     var value by remember { mutableStateOf("") }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
-                color = GoldPremium.copy(alpha = 0.5f),
-                letterSpacing = 3.sp,
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+    OutlinedTextField(
+        value = value,
+        onValueChange = { value = it },
+        label = { Text(label, fontSize = 10.sp, letterSpacing = 4.sp, fontWeight = FontWeight.Bold) },
+        leadingIcon = { Icon(icon, null, tint = GoldPremium, modifier = Modifier.size(20.dp)) },
+        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = GoldPremium,
+            unfocusedBorderColor = GoldPremium.copy(alpha = 0.15f),
+            focusedLabelColor = GoldPremium,
+            cursorColor = GoldPremium,
+            focusedTextColor = Color.White
         )
-        OutlinedTextField(
-            value = value,
-            onValueChange = { value = it },
-            leadingIcon = { Icon(icon, contentDescription = null, tint = GoldPremium, modifier = Modifier.size(18.dp)) },
-            visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GoldPremium,
-                unfocusedBorderColor = GoldPremium.copy(alpha = 0.1f),
-                cursorColor = GoldPremium,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
-            ),
-            singleLine = true
-        )
-    }
+    )
 }
