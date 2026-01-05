@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -34,6 +32,10 @@ import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
 import com.example.animatedapp.ui.theme.*
 import kotlin.math.roundToInt
+
+enum class AnimationState {
+    WALKING, WAVING, DRAGGING
+}
 
 @Composable
 fun LoginScreen() {
@@ -49,107 +51,121 @@ fun LoginScreen() {
         iterations = if (animationState == AnimationState.WALKING) LottieConstants.IterateForever else 1
     )
 
+    // Character horizontal movement
     val characterXOffset by animateDpAsState(
         targetValue = when (animationState) {
-            AnimationState.WALKING -> (-100).dp
-            AnimationState.WAVING -> 50.dp
-            AnimationState.DRAGGING -> 250.dp
+            AnimationState.WALKING -> (-150).dp
+            AnimationState.WAVING -> 40.dp
+            AnimationState.DRAGGING -> 280.dp
         },
-        animationSpec = tween(durationMillis = 2500, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 3000, easing = LinearOutSlowInEasing),
         label = "CharacterX"
     )
 
+    // Login Card vertical movement (dragged in)
     val loginCardOffset by animateDpAsState(
-        targetValue = if (animationState == AnimationState.DRAGGING) 0.dp else 800.dp,
-        animationSpec = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+        targetValue = if (animationState == AnimationState.DRAGGING) 0.dp else 1000.dp,
+        animationSpec = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
         label = "LoginCard"
     )
 
-    val backgroundBrush = Brush.verticalGradient(
-        colors = listOf(BackgroundGradientStart, BackgroundGradientEnd)
-    )
-
-    Box(modifier = Modifier.fillMaxSize().background(backgroundBrush)) {
+    Box(modifier = Modifier.fillMaxSize().background(Obsidian)) {
         
-        // Decorative background elements
+        // Luxury Background Gradient
         Box(
             modifier = Modifier
-                .size(300.dp)
-                .offset(x = (-100).dp, y = (-50).dp)
-                .background(PrimaryPurple.copy(alpha = 0.1f), RoundedCornerShape(150.dp))
-                .blur(50.dp)
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Obsidian, DeepCharcoal)
+                    )
+                )
         )
 
-        // The Login Card (Glassmorphism effect)
+        // Decorative Gold Glow
+        Box(
+            modifier = Modifier
+                .size(400.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 100.dp, y = (-100).dp)
+                .background(GoldPremium.copy(alpha = 0.05f), RoundedCornerShape(200.dp))
+                .blur(100.dp)
+        )
+
+        // The Luxury Login Card
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset { IntOffset(0, loginCardOffset.value.roundToInt()) }
                 .padding(24.dp)
-                .shadow(20.dp, RoundedCornerShape(32.dp))
-                .clip(RoundedCornerShape(32.dp))
-                .background(GlassWhite)
-                .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(32.dp))
+                .shadow(30.dp, RoundedCornerShape(40.dp), ambientColor = GoldPremium, spotColor = GoldPremium)
+                .clip(RoundedCornerShape(40.dp))
+                .background(GlassDark)
+                .border(1.dp, GoldPremium.copy(alpha = 0.3f), RoundedCornerShape(40.dp))
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Welcome Back",
-                style = MaterialTheme.typography.headlineLarge.copy(
+                text = "Welcome to Seeking",
+                style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    color = TextPrimary
+                    fontFamily = FontFamily.Serif,
+                    color = GoldPremium,
+                    letterSpacing = 2.sp
                 )
             )
             Text(
-                text = "Sign in to continue your journey",
+                text = "Elevate your connections",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextPrimary.copy(alpha = 0.6f)
+                color = TextSilver.copy(alpha = 0.7f)
             )
             
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(48.dp))
             
-            CustomTextField(
+            LuxuryTextField(
                 label = "Email Address",
-                icon = Icons.Default.Email,
-                keyboardType = KeyboardType.Email
+                icon = Icons.Default.Email
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
-            CustomTextField(
+            LuxuryTextField(
                 label = "Password",
                 icon = Icons.Default.Lock,
                 isPassword = true
             )
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             Text(
                 text = "Forgot Password?",
                 modifier = Modifier.align(Alignment.End),
                 style = MaterialTheme.typography.labelLarge,
-                color = PrimaryPurple
+                color = GoldLight
             )
             
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(48.dp))
             
             Button(
                 onClick = {},
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
+                    .height(64.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = GoldPremium,
+                    contentColor = Obsidian
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
             ) {
-                Text("Sign In", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text("SIGN IN", fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             Row {
-                Text("Don't have an account? ", color = TextPrimary.copy(alpha = 0.6f))
-                Text("Sign Up", color = SecondaryPink, fontWeight = FontWeight.Bold)
+                Text("New to Seeking? ", color = TextSilver)
+                Text("Join Now", color = GoldLight, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -158,18 +174,18 @@ fun LoginScreen() {
             composition = composition,
             progress = { progress },
             modifier = Modifier
-                .size(250.dp)
+                .size(300.dp)
                 .align(Alignment.BottomStart)
-                .offset(x = characterXOffset, y = (-20).dp)
+                .offset(x = characterXOffset, y = 20.dp)
         )
     }
 
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1000)
+        kotlinx.coroutines.delay(1500)
         animationState = AnimationState.WAVING
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         
-        kotlinx.coroutines.delay(2500)
+        kotlinx.coroutines.delay(3000)
         animationState = AnimationState.DRAGGING
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
@@ -177,11 +193,10 @@ fun LoginScreen() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomTextField(
+fun LuxuryTextField(
     label: String,
     icon: ImageVector,
-    isPassword: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text
+    isPassword: Boolean = false
 ) {
     var value by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -189,30 +204,29 @@ fun CustomTextField(
     OutlinedTextField(
         value = value,
         onValueChange = { value = it },
-        label = { Text(label) },
-        leadingIcon = { Icon(icon, contentDescription = null, tint = PrimaryPurple) },
+        label = { Text(label, color = TextSilver.copy(alpha = 0.5f)) },
+        leadingIcon = { Icon(icon, contentDescription = null, tint = GoldPremium) },
         trailingIcon = {
             if (isPassword) {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = GoldPremium.copy(alpha = 0.5f)
                     )
                 }
             }
         },
         visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = PrimaryPurple,
-            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
-            focusedLabelColor = PrimaryPurple
+            focusedBorderColor = GoldPremium,
+            unfocusedBorderColor = GoldPremium.copy(alpha = 0.2f),
+            focusedLabelColor = GoldPremium,
+            cursorColor = GoldPremium,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White
         )
     )
-}
-
-enum class AnimationState {
-    WALKING, WAVING, DRAGGING
 }

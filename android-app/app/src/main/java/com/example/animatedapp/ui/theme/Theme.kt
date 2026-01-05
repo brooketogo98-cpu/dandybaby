@@ -1,33 +1,35 @@
 package com.example.animatedapp.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-val PrimaryPurple = Color(0xFF6C63FF)
-val SecondaryPink = Color(0xFFFF6584)
-val BackgroundGradientStart = Color(0xFFF0F2F5)
-val BackgroundGradientEnd = Color(0xFFFFFFFF)
-val GlassWhite = Color(0xCCFFFFFF)
-val TextPrimary = Color(0xFF2D3436)
+// Luxury Palette
+val Obsidian = Color(0xFF0A0A0A)
+val DeepCharcoal = Color(0xFF1A1A1A)
+val GoldPremium = Color(0xFFD4AF37)
+val GoldLight = Color(0xFFF9E29C)
+val GlassDark = Color(0xAA121212)
+val TextGold = Color(0xFFE5C100)
+val TextSilver = Color(0xFFB2BEC3)
 
-private val LightColorScheme = lightColorScheme(
-    primary = PrimaryPurple,
-    secondary = SecondaryPink,
-    tertiary = Color(0xFF00CEC9),
-    background = BackgroundGradientStart,
-    surface = GlassWhite,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary
+private val LuxuryColorScheme = darkColorScheme(
+    primary = GoldPremium,
+    secondary = GoldLight,
+    tertiary = Color(0xFF74B9FF),
+    background = Obsidian,
+    surface = DeepCharcoal,
+    onPrimary = Obsidian,
+    onSecondary = Obsidian,
+    onBackground = TextSilver,
+    onSurface = TextGold
 )
 
 @Composable
 fun AnimatedAppTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = LightColorScheme,
+        colorScheme = LuxuryColorScheme,
         content = content
     )
 }
