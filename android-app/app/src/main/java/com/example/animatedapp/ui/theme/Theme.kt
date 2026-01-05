@@ -5,11 +5,23 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+val PrimaryPurple = Color(0xFF6C63FF)
+val SecondaryPink = Color(0xFFFF6584)
+val BackgroundGradientStart = Color(0xFFF0F2F5)
+val BackgroundGradientEnd = Color(0xFFFFFFFF)
+val GlassWhite = Color(0xCCFFFFFF)
+val TextPrimary = Color(0xFF2D3436)
+
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF6200EE),
-    secondary = Color(0xFF03DAC6),
-    tertiary = Color(0xFF3700B3),
-    background = Color(0xFFF5F5F5)
+    primary = PrimaryPurple,
+    secondary = SecondaryPink,
+    tertiary = Color(0xFF00CEC9),
+    background = BackgroundGradientStart,
+    surface = GlassWhite,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary
 )
 
 @Composable
